@@ -24,16 +24,22 @@ OPT="sort=manacost&set_ope=or&output=text"
 
 GALLERY="http://magic.wizards.com/ja/articles/archive/card-image-gallery/$2"
 
+declare -a rarity=($MR $R)
+declare -a rarity_name=(神話レア レア)
+
 declare -a colors=($COLORLESS $WHITE $BLUE $BLACK $RED $GREEN $MULTI $ARTIFACT $LAND)
 declare -a color_name=(無色 白 青 黒 赤 緑 マルチ アーティファクト 土地)
 
 gals=$(curl -s $GALLERY | grep -o -E '<img.*?>' | sed -E 's/^.*alt="([^"]+)".*src="([^"]+)".*$/\1=\2/')
 
-for rarity in $MR $R; do
-  for ((i = 0; i < ${#colors[@]}; i++)) {
-    names=$(curl -s $URL"?"$SET"&"$rarity"&"${colors[i]}"&"$OPT | nkf -w | grep "日本語名" | sed -E 's/日本語名：(.*)（.*/\1/')
+for ((i = 0; i < ${#rarity[@]}; i++)) {
+  echo "# ${rarity_name[i]}"
+  echo
 
-    echo "## ${color_name[i]}"
+  for ((j = 0; j < ${#colors[@]}; j++)) {
+    names=$(curl -s $URL"?"$SET"&"${rarity[i]}"&"${colors[j]}"&"$OPT | nkf -w | grep "日本語名" | sed -E 's/日本語名：(.*)（.*/\1/')
+
+    echo "## ${color_name[j]}"
     for n in $names; do
       enc=$(echo -n $n | perl -e 'use Encode qw(decode_utf8); $str = decode_utf8(<>); $str =~ s/(.)/"&#".ord($1).";"/eg; print $str;')
       img=$(echo $gals | grep -o -E "$enc=\S*" | awk -F '=' '{print $2}')
@@ -41,4 +47,4 @@ for rarity in $MR $R; do
     done
     echo
   }
-done
+}
